@@ -1,4 +1,4 @@
-var lrs;
+var lrs, TC;
 
 $(document).ready(function () {
     try {
@@ -8,6 +8,9 @@ $(document).ready(function () {
             password: "R9IGJ2fFiSizmd2q1EbN",
             allowFail: false
         });
+
+        TC = new TinCan({ recordStores: [lrs] });
+
     } catch (ex) {
         console.log("Failed to setup LRS object: ", ex);
         // TODO: do something with error, can't communicate with LRS
@@ -68,39 +71,37 @@ var createStatement = function (statementIndex) {
 };
 
 var saveStatement = function (statement) {
-    if (lrs) {
-        lrs.saveStatement(
-            statement, {
-                callback: function (err, xhr) {
-                    if (err !== null) {
-                        if (xhr !== null) {
-                            console.log("Failed to save statement: " + xhr.responseText + " (" + xhr.status + ")");
-                            // TODO: do something with error, didn't save statement
-                            return;
-                        }
-
-                        console.log("Failed to save statement: " + err);
+    if (TC) {
+        TC.sendStatements(
+            [statement],
+            function (err, response) {
+                if (err[0].err !== null) {
+                    if (err[0].xhr !== null) {
+                        console.log("Failed to save statement: " + err[0].xhr.responseText +
+                                    " (" + err[0].xhr.status + ")");
                         // TODO: do something with error, didn't save statement
                         return;
                     }
 
-                    console.log("Statement saved");
-                    // TOOO: do something with success (possibly ignore)
+                    console.log("Failed to save statement: " + err);
+                    // TODO: do something with error, didn't save statement
+                    return;
                 }
+
+                console.log("Statement saved");
+                console.log(response[0]);
+                // TOOO: do something with success (possibly ignore)
             }
         );
     }
 };
 
 var queryStatements = function () {
-    if (lrs) {
-        lrs.queryStatements({
+    if (TC) {
+        TC.getStatements({
             params: {
-                /*verb: new TinCan.Verb({
+                verb: new TinCan.Verb({
                     id: "http://adlnet.gov/expapi/verbs/experienced"
-                }),*/
-                agent: new TinCan.Agent({
-                   mbox: "mailto:info@tincanapi.com"
                 }),
                 limit: 5,
                 since: "2017-07-05T08:34:16Z"
